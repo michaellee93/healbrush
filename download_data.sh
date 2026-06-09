@@ -1,16 +1,18 @@
 #!/bin/bash
+# Pull training data from R2. Requires AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY set.
 set -e
 
-mkdir -p data/coco data
+R2_ENDPOINT="https://4da15aa084cf06c245300b38621c9cfe.r2.cloudflarestorage.com"
+BUCKET="healbrush-data"
 
-echo "==> COCO train2017 (~18 GB)..."
-wget -c --no-check-certificate "https://images.cocodataset.org/zips/train2017.zip" -O data/train2017.zip
-unzip -q data/train2017.zip -d data/coco/
-rm data/train2017.zip
+mkdir -p data/coco/train2017 data/dtd
 
-echo "==> DTD (~600 MB)..."
-wget -c "https://www.robots.ox.ac.uk/~vgg/data/dtd/download/dtd-r1.0.1.tar.gz" -O data/dtd.tar.gz
-tar -xzf data/dtd.tar.gz -C data/
-rm data/dtd.tar.gz
+echo "==> COCO train2017..."
+aws s3 sync "s3://${BUCKET}/coco/train2017/" data/coco/train2017/ \
+    --endpoint-url "$R2_ENDPOINT" --no-progress
+
+echo "==> DTD..."
+aws s3 sync "s3://${BUCKET}/dtd/" data/dtd/ \
+    --endpoint-url "$R2_ENDPOINT" --no-progress
 
 echo "Done."

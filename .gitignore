@@ -1,0 +1,19 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Training data and outputs
+data/
+outputs/
+wandb/
+*.zip
+*.tar.gz
+*.png
+*.onnx

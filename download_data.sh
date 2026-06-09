@@ -4,7 +4,7 @@ set -e
 mkdir -p data/coco data
 
 echo "==> COCO train2017 (~18 GB)..."
-wget -c "https://images.cocodataset.org/zips/train2017.zip" -O data/train2017.zip
+wget -c --no-check-certificate "https://images.cocodataset.org/zips/train2017.zip" -O data/train2017.zip
 unzip -q data/train2017.zip -d data/coco/
 rm data/train2017.zip
 

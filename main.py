@@ -197,6 +197,7 @@ def make_eval_batch(dataset, n=5):
 
 def main():
     torch.backends.cudnn.benchmark = True
+    torch.set_float32_matmul_precision("high")
 
     wandb.init(project="healbrush", resume="allow")
 

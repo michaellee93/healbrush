@@ -21,7 +21,7 @@ def perceptual_loss(output, target):
 # GAN fine-tune knobs. The generator is fully trained already — we resume its
 # weights and drop its LR so the adversarial gradient nudges rather than wrecks
 # the minimum it already found. The discriminator starts from scratch.
-ADV_WEIGHT = 0.05
+ADV_WEIGHT = 0.0
 FINE_TUNE_LR = 5e-5
 
 # DTD is ~5.6k texture crops vs. COCO's ~118k photos — sampled at its natural
@@ -273,17 +273,21 @@ def main():
             pred = model(x)
 
             # --- discriminator step: real vs. fake, conditioned on the hole ---
-            opt_d.zero_grad()
-            real_logits = disc(clean, context, mask)
-            fake_logits = disc(pred.detach(), context, mask)
-            d_loss = hinge_d_loss(real_logits, fake_logits)
-            d_loss.backward()
-            opt_d.step()
+            d_loss = torch.zeros(())
+            if ADV_WEIGHT > 0:
+                opt_d.zero_grad()
+                real_logits = disc(clean, context, mask)
+                fake_logits = disc(pred.detach(), context, mask)
+                d_loss = hinge_d_loss(real_logits, fake_logits)
+                d_loss.backward()
+                opt_d.step()
 
             # --- generator step: reconstruction + perceptual + adversarial ---
             opt.zero_grad()
-            adv_logits = disc(pred, context, mask)
-            adv_loss = hinge_g_loss(adv_logits)
+            adv_loss = torch.zeros(())
+            if ADV_WEIGHT > 0:
+                adv_logits = disc(pred, context, mask)
+                adv_loss = hinge_g_loss(adv_logits)
             loss = (
                 healing_loss(pred, clean, mask)
                 + 0.1 * perceptual_loss(pred, clean)

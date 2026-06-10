@@ -73,6 +73,26 @@ class Up(nn.Module):
         return self.conv(x)
 
 
+class SelfAttention2d(nn.Module):
+    """Self-attention over spatial positions, applied at the bottleneck where
+    the feature map is small enough (16x16 at 256px input) for full
+    pairwise attention to be cheap."""
+
+    def __init__(self, channels, num_heads=8):
+        super().__init__()
+        self.norm = nn.GroupNorm(32, channels)
+        self.attn = nn.MultiheadAttention(channels, num_heads, batch_first=True)
+
+    def forward(self, x):
+        b, c, h, w = x.shape
+        residual = x
+        x = self.norm(x)
+        x = x.flatten(2).transpose(1, 2)  # (B, H*W, C)
+        x, _ = self.attn(x, x, x)
+        x = x.transpose(1, 2).reshape(b, c, h, w)
+        return x + residual
+
+
 class UNet(nn.Module):
     def __init__(self):
         super().__init__()
@@ -84,6 +104,7 @@ class UNet(nn.Module):
         self.down4 = Down(256, 512)
 
         self.bottleneck = ConvBlock(512, 512)
+        self.attn = SelfAttention2d(512)
 
         # upps
         self.up4 = Up(512, 512, 512)
@@ -100,6 +121,7 @@ class UNet(nn.Module):
         s4, x = self.down4(x)
 
         x = self.bottleneck(x)
+        x = self.attn(x)
 
         x = self.up4(x, s4)
         x = self.up3(x, s3)
@@ -178,7 +200,7 @@ def main():
 
     wandb.init(project="healbrush", resume="allow")
 
-    out_dir = Path("./outputs/4layer")
+    out_dir = Path("./outputs/attn")
     out_dir.mkdir(exist_ok=True)
 
     model = torch.compile(UNet().cuda())
